@@ -1,0 +1,45 @@
+
+<html>
+<head>
+     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+</head>
+  <body> 
+  <div align="center">
+   <div class="form-group">
+   <br>
+   <br>
+   <br>
+
+   <label>OriginalObject</label><br>
+    <p id="baz">"baz": "qux"</p>
+    <p id="foo">"rol": "bar"</p>
+    <label id="chvar" style="visibility: hidden;"><%= token %></label>
+
+  </div>
+  </div>
+
+<br>
+   <div align="center">
+   <div class="form-group">
+      <label for="OriginalObject">PatchObject</label><br>
+          <p id="add">[{op: 'add', path: '/foo', value: 'foobar'}]</p>
+     <div>
+       <button type="button" class="btn btn-primary" onclick="redirect()">Submit</button>
+   </div>
+
+  </div>
+ </div>
+  </body>
+<script type="text/javascript">
+  function redirect()
+{
+  var value=document.getElementById("chvar").innerHTML;
+  //console.log("value",value);
+   var d="http://localhost:8080/jsonpatchresult?token="+value;
+   window.location.href=d;
+  
+}
+ 
+ </script> 
+</html>

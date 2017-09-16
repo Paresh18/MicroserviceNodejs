@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+</head>
+
+<body class="container">
+    <main>
+        <div>
+            <h1 style="text-align: center">This is our jwt token</h1>
+            <div class="form-group">
+                 <label for="exampleTextarea">Token</label>
+                 <textarea class="form-control"  rows="7" id="chvar"><%= token %></textarea>
+            </div>
+        </div>
+    </main>
+     <div>
+       <button type="button" class="btn btn-primary" onclick="redirect()">Json Patching</button>
+   </div>
+   
+   <br>
+   <br>
+   
+    <div>
+       <button type="button" class="btn btn-primary" onclick="cretthumbnail()">Create Thumbnail</butto>
+   </div>
+
+
+</body>
+<script>
+
+function redirect()
+{
+	var value=document.getElementById("chvar").innerHTML;
+	//console.log("value",value);
+   var d="http://localhost:8080/jsonpatch?token="+value;
+   window.location.href=d;
+  
+}
+
+function cretthumbnail()
+{
+  var value=document.getElementById("chvar").innerHTML;
+  //console.log("value",value);
+   var d="http://localhost:8080/thumbnail?token="+value;
+   window.location.href=d;
+  
+}
+
+</script>
+</html>

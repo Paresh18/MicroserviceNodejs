@@ -1,0 +1,37 @@
+<html>
+<head>
+     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+</head>
+ <body> 
+ <h1 style="text-align: center;">Enter the image url</h1><br><br>
+ <div class="form-group" style="text-align: -webkit-center;">
+ <form action="/thumbnailresult" method="post" id="myform">
+    <input type="text" class="form-control input-normal" id="inpId"  name="imgurl" aria-describedby="emailHelp" placeholder="Enter image url" style=" width: 60%;" required>
+    <br>
+  
+   <button type="submit" class="btn btn-primary" onclick="redirect()">ShowImage</button>
+  </form>
+  <br>
+   </div>
+   <br>
+   <br>
+   <img src="" alt="Alt text" id="imgId">
+ </body>
+
+ <script type="text/javascript">
+ function redirect()
+{
+  var value=document.getElementById("inpId").value;
+  if(value.match(/\.(jpeg|jpg|gif|png)$/) != null)
+  {
+     document.getElementById("imgId").src=value;
+     document.getElementById("btnsubmit").style.visibility="visible";
+  }
+  else
+  {
+  	 alert("Please provide url with jpg,png,jpeg");
+  }
+}
+ </script>
+</html>

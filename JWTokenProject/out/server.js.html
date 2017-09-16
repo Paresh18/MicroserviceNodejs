@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: server.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: server.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/* jshint node: true */ 	
+/** get the packages we need */ 
+// =================================================================
+var express 	= require('express');
+var app         = express();
+var bodyParser  = require('body-parser');
+var morgan      = require('morgan');
+var mongoose    = require('mongoose');
+var request     = require('request');
+var Schema = mongoose.Schema;  
+var jsonpatch   =require('json-patch');
+var path = __dirname + '/views/';
+
+const MongoClient = require('mongodb').MongoClient;
+
+var jimp=require("jimp");
+var mongoose = require('mongoose');
+
+var jwt    = require('jsonwebtoken'); /** used to create, sign, and verify tokens */
+var config = require('./config'); /** get our config file*/
+var User   = require('./app/models/user'); /** get our mongoose model*/
+
+var imgpath=__dirname +"/public/"; /**Where the image is stored */
+
+
+var logger=require("./log");
+logger.info("log to file");
+
+
+  
+var MONGO_URL = 'mongodb://monchy18:1234@ds135534.mlab.com:35534/tokenuser';
+/** configuration ===*/
+// =================================================================
+
+var port = process.env.PORT || 8080; 
+//mongoose.connect(config.database); /** connect to database */
+app.set("superSecret", config.secret); /** secret variable */
+
+
+/** use body parser so we can get info from POST and/or URL parameters*/
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+app.set('view engine', 'ejs');
+app.use(express.static('public'));
+
+/** use morgan to log requests to the console */
+app.use(morgan('dev'));
+
+/** Giving out the token on entereing username and password */
+
+
+
+mongoose.connect(MONGO_URL,{ useMongoClient: true });
+
+
+MongoClient.connect(MONGO_URL,  {}, function(err, db) {
+ if(!err)
+ {
+ 	console.log("Connected correctly to server");
+  db.close();
+ }
+ else
+ {
+ 	console.log("error occured");
+ }
+  
+});
+
+
+// todos  
+var UsersShema = new Schema({  
+    name: {  
+        type: String,  
+        required: true  
+    },  
+    password: {  
+        type: String,
+        required: true   
+    }  
+});  
+   
+var Todos = mongoose.model('todos', UsersShema);  
+
+
+mongoose.connection.on("error", function(ref) {
+  console.log("Could not Connected to mongo server.",ref);
+});
+
+
+var gtoken="";
+app.post('/tokeninfo', function(req, res) {
+
+
+/* 
+ * Mongoose by default sets the auto_reconnect option to true.
+ * We recommend setting socket options at both the server and replica set level.
+ * We recommend a 30 second connection timeout because it allows for 
+ * plenty of time in most operating environments.
+ */
+ 
+
+var tdos = new Todos({  
+        name: req.body.name,  
+        password: req.body.password  
+    });  
+   
+    tdos.save(function(err, todos) {   
+        if (!err) {  
+            console.log("user saved successfully");  
+             console.log("this is after");
+        } else {  
+            res.statusCode = 500;  
+            res.json({  
+                error: 'Server error'  
+            });
+
+             console.log("this is else",err);  
+        }  
+    });  
+
+	var options = {
+		url: 'http://localhost:8080/authenticate',
+		method: 'POST',
+		'User-Agent': 'Super Agent/0.0.1',
+		'Content-Type': 'application/x-www-form-urlencoded',
+		form: {'name': req.body.name, 'password':req.body.password}
+	};
+	request(options, function (error, response, body) {
+		if (!error &amp;&amp; response.statusCode == 200) {
+			Todos.findOne({
+				name: req.body.name
+			}, function(err, user) 
+			{
+				if (err) throw err;
+				/** if user is found and password is right
+				 create a token */
+				var token = jwt.sign(user, app.get('superSecret'), {
+					expiresIn: 86400 // expires in 24 hours
+				});
+				gtoken=token;
+				res.render('index',{token:token});
+			});	
+		}
+	});
+});
+
+
+// ---------------------------------------------------------
+/** get an instance of the router for api routes */
+// ---------------------------------------------------------
+var apiRoutes = express.Router(); 
+
+// ---------------------------------------------------------
+/** authentication (no middleware necessary since this isnt authenticated) */
+// ---------------------------------------------------------
+// http://localhost:8080/api/authenticate
+
+apiRoutes.post('/authenticate', function(req, res) {
+	var token="";
+
+	/** find the user*/
+	Todos.findOne({
+		name: req.body.name
+	}, function(err, user) {
+
+		if (err) throw err;
+		/** if user is found and password is right */
+		/** create a token */
+				
+		token = jwt.sign(user, app.get('superSecret'), {
+			expiresIn: 86400 // expires in 24 hours
+		});
+		res.render('index',{token:token,'success':'done'});		
+	});    
+   
+});
+
+
+/**public endpoint*/
+/** Home Page */
+apiRoutes.get('/',function(req,res)
+{
+	res.redirect('/login');
+});
+
+
+apiRoutes.get('/login', function(req, res) {
+	res.sendFile(path + "login.html");
+});
+
+
+/** request to thumbnail request with the small size image */
+apiRoutes.post('/thumbnailresult',function(req,res)
+{
+	var imgurl=req.body.imgurl;
+
+	var options = {
+		url: 'http://localhost:8080/llk',
+		method: 'get',
+		headers: {
+			'User-Agent': 'Super Agent/0.0.1',
+			'Content-Type': 'application/x-www-form-urlencoded',
+			'x-access-token':gtoken
+		}
+	};
+
+	request(options,function(error,response, body)
+	{
+		var file;
+		var s='';
+
+	}).on('data',function(data){
+  
+		//res.render('thumbnailresult');
+		jimp.read(imgurl,function(err,image)
+		{
+			if(err)
+			{
+				console.log("error occured");
+			}
+			else if(image==null)
+			{
+				res.json('not a valid url');
+			}
+			else
+			{
+				image.resize(50,50); 
+				file = "new_name1." + image.getExtension();
+				s = imgpath+file;
+				image.write(s);
+				res.render('thumbnailresult',{rImgsize:file});
+			}
+		});
+	});
+});
+
+// ---------------------------------------------------------
+/** route middleware to authenticate and check token*/
+// ---------------------------------------------------------
+apiRoutes.use(function(req, res, next) {
+
+	/** check header or url parameters or post parameters for token*/
+	var token = req.body.token || req.param('token') || req.headers['x-access-token'];
+
+	// decode token
+	if (token) {
+
+		/** verifies secret and checks exp */
+		jwt.verify(token, app.get('superSecret'), function(err, decoded) {			
+			if (err) {
+				return res.json({ success: false, message: 'Failed to authenticate token.' });		
+			} else {
+				/** if everything is good, save to request for use in other routes */
+				req.decoded = decoded;	
+				next();
+			}
+		});
+
+	} else {
+
+		/**  if there is no token return an error */
+		return res.status(403).send({ 
+			success: false, 
+			message: 'No token provided.'
+		});		
+	}
+	
+});
+
+// ---------------------------------------------------------
+/**authenticated routes*/
+// ---------------------------------------------------------
+
+/**Protected endpint*/
+apiRoutes.get('/jsonpatch',function(req,res)
+{
+	res.render('jsonpatch',{token:gtoken});
+});
+apiRoutes.get('/jsonpatchresult',function(req,res)
+{
+
+	var a = {
+		"baz": "qux",
+		"rol": "bar"}
+	jsonpatch.apply(a, [{op: 'add', path: '/foo', value: 'foobar'}]);
+	res.render('jsonpatchresult',{patchvalue:a});
+	console.log(a);
+});
+
+apiRoutes.get('/thumbnail',function(req,res)
+{
+	res.render('thumbnail',{token:gtoken});
+});
+
+app.use('/', apiRoutes);
+
+// =================================================================
+/**start the server ======================*/
+
+
+app.listen(port);
+console.log('Magic happens at http://localhost:' + port);
+
+module.exports = app;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#apiRoutes">apiRoutes</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#imgpath">imgpath</a></li><li><a href="global.html#logger">logger</a></li><li><a href="global.html#port">port</a></li><li><a href="global.html#User">User</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Sep 16 2017 11:17:04 GMT+0530 (India Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
