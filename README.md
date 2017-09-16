@@ -1,8 +1,19 @@
                                              This Project has 3 challenges
 
+
+Clone the project into your directory.
+
+Download  all the libraries with "npm install".
+
+To Start the project use command "npm start".
+
+For testing use command "npm test".
+
+
+
 I have implmented all the 3 challenges given.
 
-                                               Public Endpoint
+                                                Public Endpoint
 /login -->It will give you the login form to enter username and password,It can be any random pair.
 
                                               Protected Endpoint
@@ -21,6 +32,22 @@ Note**All the below pages will show the webpage when the token is being present 
 
 
                                                 Testing
-For testing I had used mocha with chai,I had described 13 testcases which is being fully passed when run with npm test.
+For testing I had used mocha with chai,I had described 13 testcases which is being fully passed when run with command "npm test".
+
+
+                                               Bonus Section
+1)I had used Istanbul for test coverage reports.(npm test).
+
+2)Used JSdoc comments to build the HTML site from comments.(jsdoc server.js)This will generate html site in the out folder.
+
+3)Used Winston library for logging.(node log.js).-->This will generate debug.log and exceptions.log file for log.
+
+4)Used ESlint for linting(eslint server.js).
+
+
+
+
+
+
 
 
